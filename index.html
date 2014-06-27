@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html> 
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width" />
+        <script type="text/javascript">
+            
+        </script>
+
+	<style type="text/css">
+		.cutoutDivWeld{
+			display: none;
+		}
+		#svgArea{
+			
+			position: relative;
+			float: left;
+			width: 550px;
+			height: 575px;
+			
+		}
+		#tools{
+			
+			position: relative;
+			float: left;
+			width: 250px;
+			height: 575px;
+			
+			display: none;
+		}
+		#main{
+			width: 800px;
+			height: 600px;
+			
+			border: 1px solid black;
+		}
+		#tool-header{
+			height: 25px;
+		}
+		#tool-header div{
+			float: left;
+			position: relative;
+			width: 32%;
+			height: 100%;
+			border: 1px solid black;
+			text-align: center; 
+
+			background-color: #fff;
+			-webkit-border-radius: 6px;
+			-moz-border-radius: 6px;
+			border-radius: 6px;
+			-webkit-box-shadow: 0 1px 4px rgba(0,0,0,.065);
+			-moz-box-shadow: 0 1px 4px rgba(0,0,0,.065);
+			box-shadow: 0 1px 4px rgba(0,0,0,.065);
+		}
+		
+		#tool-section{
+			height: 548px;
+			border: 1px solid black;
+
+
+		}
+		}
+		#editText{
+			display: none;
+		}
+		#message{
+			display:none;
+			position: absolute;
+		}
+		body{
+			-webkit-touch-callout: none;
+			-webkit-user-select: none;
+			-khtml-user-select: none;
+			-moz-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
+		}
+		.popup-box {
+	
+	border-radius: 5px;
+	background: #fff;
+	display: none;
+	box-shadow: 1px 1px 5px rgba(0,0,0,0.2);
+	font-family: Arial, sans-serif;
+	z-index: 9999;
+
+	font-size: 14px;
+	position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-top: -360px;
+    margin-left: -425px;
+    width: 850px;
+    height: 720px;
+}
+
+.popup-box .close {
+	position: absolute;
+	top: 0px;
+	right: 0px;
+	font-family: Arial, Helvetica, sans-serif;	
+	font-weight: bold;
+	cursor: pointer;
+	color: #434343;
+	padding: 20px;
+	font-size: 20px;
+}
+
+.popup-box .close:hover {
+	color: #000;
+}
+
+.popup-box h2 {
+	padding: 0;
+	margin: 0;
+	font-size: 18px;
+}
+.popup-box .top {
+	padding: 20px;
+}
+
+.popup-box .bottom {
+	background: #eee;
+	border-top: 1px solid #e5e5e5;
+	padding: 20px;
+	border-bottom-left-radius: 5px;
+	border-bottom-right-radius: 5px;
+}
+
+#blackout {
+	background: rgba(0,0,0,0.3);
+	position: absolute;
+	top: 0;
+	overflow: hidden;
+	z-index: 999;
+	left: 0;
+	display: none;
+}
+.exportBtn{
+	position: absolute;
+float: left;
+bottom: 0px;
+display: none;
+}
+/*#loader{
+	height: 99%;
+	width: 99%;
+	display: none;
+	
+	background-color: green;
+	position: absolute;
+	z-index: 99999;
+	font-size: 30px;
+}*/
+#loader,#weldLoader{
+   height:60px;
+   width:60px;
+   margin:0 auto;
+   display:none;
+   position:absolute;
+   z-index: 99999;
+   top: 40%;
+	left: 14%;
+   -webkit-animation: rotation .6s infinite linear;
+   -moz-animation: rotation .6s infinite linear;
+   -o-animation: rotation .6s infinite linear;
+   animation: rotation .6s infinite linear;
+   border:6px solid rgba(0,174,239,.15);
+   border-radius:100%;
+}
+
+#loader:before,#weldLoader:before {
+   content:"";
+   display:block;
+   position:absolute;
+   left:-6px;
+   top:-6px;
+   height:100%;
+   width:100%;
+   border-top:6px solid rgba(0,174,239,.8);
+   border-left:6px solid transparent;
+   border-bottom:6px solid transparent;
+   border-right:6px solid transparent;
+   border-radius:100%;
+}
+
+@-webkit-keyframes rotation {
+   from {-webkit-transform: rotate(0deg);}
+   to {-webkit-transform: rotate(359deg);}
+}
+@-moz-keyframes rotation {
+   from {-moz-transform: rotate(0deg);}
+   to {-moz-transform: rotate(359deg);}
+}
+@-o-keyframes rotation {
+   from {-o-transform: rotate(0deg);}
+   to {-o-transform: rotate(359deg);}
+}
+@keyframes rotation {
+   from {transform: rotate(0deg);}
+   to {transform: rotate(359deg);}
+	</style>
+	
+	
+	
+
+</head>
+<body>
+	<div id="main">
+	<div id="loader"> 
+	</div>	 
+		<div class="comboBox">
+		  <select class="select_svg">
+		   <option value="initial" selected="selected">--Choose Any Template--</option>
+		   <option value="assets/1.svg">New.svg</option>
+		   <option value="assets/Heart3Vector.svg">Heart3Vector.svg</option>
+			   			   
+			   <option value="assets/shape+text2.svg">shapetext2.svg</option>
+			   <option value="assets/shape+text3.svg">shape+text3.svg</option>
+			   <option value="assets/shape+shape3.svg">shape+shape3.svg</option>
+			   <option value="assets/shape+shape4.svg">shape+shape4.svg</option>	    
+			   <option value="assets/Heart4Vector.svg">Heart4Vector.svg</option>
+			   <option value="assets/heart3-colored-shadow.svg">heart3-colored-shadow.svg</option>
+			   <option value="assets/S_Both.svg">S_Both.svg</option>
+			   <option value="assets/PoliceBadge.svg">PoliceBadge.svg</option>
+			   <option value="assets/Police Badge.svg">Police Badge.svg</option>
+			   <option value="assets/shape+shape2.svg">Police Badge shape+shape2.svg</option>
+			   <option value="assets/shape+text.svg">Police Badge shape+text.svg</option>
+			   <option value="assets/Rect_Both.svg">Rect_Both.svg</option>
+			   <option value="assets/Round_Both.svg">Round_Both.svg</option>
+			   <option value="assets/test-1_manojB.svg">test-1_manojB.svg</option>
+			   <option value="assets/test-2_manojB.svg">test-2_manojB.svg</option>
+			   <option value="assets/test-3_manojB.svg">test-3_manojB.svg</option>
+			   <option value="assets/test-4_manojB.svg">test-4_manojB.svg</option>
+			   <option value="assets/test-5_manojB.svg">test-5_manojB.svg</option>
+			   <option value="assets/test-6_manojB.svg">test-6_manojB.svg</option>
+			   <option value="assets/test-7_manojB.svg">test-7_manojB.svg</option>
+			   <option value="assets/test-8_manojB.svg">test-8_manojB.svg</option>
+			   <option value="assets/sample-1.svg">sample-1.svg</option>
+			   <option value="assets/sample-5.svg">sample-5.svg</option>
+			   <option value="assets/sample-4.svg">sample-4.svg</option>
+			   <option value="assets/sample-3.svg">sample-3.svg</option>
+			   <option value="assets/sample-2.svg">sample-2.svg</option>
+			   <option value="assets/Inkscape_test.svg">Inkscape_test.svg</option>
+			   
+			    
+			   
+			   
+			  
+		  </select>
+	 	</div>
+		<div id="svgArea"> 
+			<div id="message">
+				1. Please create a blending area. <br>
+				2. Click on black dot to end the Blending area.
+			</div>
+			<div id="svgContainer"> 
+
+			</div>
+						<div class="exportBtn" style="">
+	<a class="popup-link-1"><input type="button" id="export" value="Export"></a>
+</div>
+		</div>
+		<div id="tools"> 
+			<div id="tool-header">
+				<div id="addText"> Text </div>
+				<div> S... </div>
+				<div> Upload </div>
+			</div>
+			<div id="wtool-section">
+				<div id="editText"> 
+					<textarea id="input" Placeholder="My Sweet Text"></textarea>
+					<input type="button" id="button" value="Add Text">
+					<input type="button" id="save" value="Save">
+					<input type="button" id="color_map" value="Color Mapping">
+					<input type="button" id="flip" value="Flip 180"> <br>
+					Font Family <select id="font_family">
+                                    <option selected="" value="BaroqueScript">Baroque Script</option>
+                                    <option selected="" value="MyriadProRegular">Myriad Pro Regular</option>
+                                </select>
+				</div>
+				
+			</div>
+		</div>
+		<div class="popup-box" id="popup-box-1">
+		<div class="close">X</div>
+		<div class="top"><h2>Exported SVGs</h2></div>
+		<div class="bottom">
+			<div class="export-page" style="height:600px;width:800px;">
+				<div class="cutout_title" style="position: relative;
+float: left;
+margin-left: 3%;">Cutout</div>
+				<input type="checkbox" id="weldingCheck"> welding
+				<div class="engraving_title" style="position: relative;margin-left: 53%;">Engraving</div>
+
+				<div class="cutoutDiv" style="border:1px solid rgb(143, 143, 145);width: 350px;height: 500px;
+				margin-top: 50px;position:relative;float:left;margin-left: 25px;background-color: white;">
+
+				</div>	
+				<div id="weldLoader" style="left: 20%;
+top: 50%;"> 
+				</div>	 
+				<div class="cutoutDivWeld" style="border:1px solid rgb(143, 143, 145);width: 350px;height: 500px;
+				margin-top: 50px;position:relative;float:left;margin-left: 25px;background-color: white;">
+
+				</div>							
+				<div class="etchingDiv" style="border:1px solid rgb(143, 143, 145);width: 350px;
+				height: 500px;
+				margin-top: 50px;position:relative;float:right;margin-right: 25px;background-color: white;"></div>
+				<form id="form_etch" action="etching.php" method="POST">
+				<textarea class="txt_etch" name="etching" style="display:none;">
+				</textarea>
+				<input type="submit"  id="dwnld_etching" value="Download" style="position:relative;margin-right:20%;float:right">
+			</form>
+			<form id="form_cut" action="cutout.php" method="POST">
+				<input type="submit"  id="dwnld_cutout" value="Download" style="position:relative;margin-left:20%;float:left">
+				<textarea class="txt_cut" name="cutout" style="display:none;">
+				</textarea>
+			</form>
+
+			</div>
+			
+		</div>
+		
+
+	</div>
+		<div id="blackout">		</div>
+	<div>
+	
+	<script type="text/javascript" src="js/jquery.js"></script>		
+	<script type="text/javascript" src="js/raphael.js"></script>	
+	<script type="text/javascript" src="js/raphael.free_transform.js"></script>	
+	<script type="text/javascript" src="js/saveJson.js"></script>
+	<script type="text/javascript" src="js/raphael-svg-import.js"></script>
+	<script type="text/javascript" src="js/script.js"></script>
+	<script type="text/javascript" src="js/popup.js"></script>
+	<script src="another/clipper.js"></script>
+	<script src="js/textModule.js"></script>
+	<script type="text/javascript" src="another/abc.js"></script>
+	
+    <!-- Importing Fonts Scripts Starts -->
+    	<script type="text/javascript" src="js/cufon/cufon.js"></script>
+    	<script type="text/javascript" src="js/cufon/myriad-pro.cufonfonts.js"></script>        	
+    	<script type="text/javascript" src="js/cufon/Baroque_Script_400.font.js"></script>		
+    <!-- Importing Fonts Scripts Ends -->  
+</body>
+</html>

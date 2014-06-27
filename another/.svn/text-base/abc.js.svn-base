@@ -1,0 +1,376 @@
+var Clipper = null;
+var FirstPoly = null, SecondPoly = null,ResultPoly=null;
+var Paper = null;
+var LoopPoly = [];
+var ResultLoop = [];
+var color = "red";
+
+
+var TestPoly = null;
+var myPoints = null;
+var scale = 100;
+
+
+function myPathToPoly(path){
+	myPoints = Raphael.path2curve(path);
+	
+
+	var myArray = [];
+	var startPoint,endPoint,controlFirst,controlSecond;
+	var myX,myY,numPixels=30;
+	var k = 0;
+	for(var i=0,il=myPoints.length;i<il;i++){
+		objPixels = [];		
+		if(myPoints[i][0] == "M"){
+			myArray[myArray.length] = [];			
+			k=0;
+			continue;
+		}
+		if(myPoints[i][0] == "C"){
+			myX = myPoints[i-1][myPoints[i-1].length-1];
+			myY = myPoints[i-1][myPoints[i-1].length-2];
+			startPoint = new coord(myX,myY);
+			myX = myPoints[i][myPoints[i].length-1];
+			myY = myPoints[i][myPoints[i].length-2];
+			endPoint = new coord(myX,myY);			
+			myX = myPoints[i][1];
+			myY = myPoints[i][2];
+			controlFirst = new coord(myY,myX);
+			myX = myPoints[i][3];
+			myY = myPoints[i][4];
+			controlSecond = new coord(myY,myX);			
+			for(var j=0; j<numPixels; j++) {				
+				percent = (1/numPixels) * j;
+				var pos = getBezier(percent,  endPoint, startPoint, controlSecond,  controlFirst);
+							
+				myArray[myArray.length-1][k++] = {Y: pos.X, X:pos.Y};				
+			}					
+		}
+	}
+	return myArray;
+}
+function isOnLine(x, y, endx, endy, px, py) {
+    var f = function(somex) { return (endy - y) / (endx - x) * (somex - x) + y; };
+    return Math.abs(f(px) - py) < 1e-6 // tolerance, rounding errors
+        && px >= x && px <= endx;      // are they also on this segment?
+}
+
+function drawBezier() {	
+	for(var i=0; i<numPixels; i++) {				
+		percent = (1/numPixels) * i;
+		var pos = getBezier(percent, S, E, c1, c2);
+		objPixels[i].moveTo(pos.x, pos.y);
+	}
+}
+function printDots(poly){
+	
+	var x,y,dot;
+	for(var i=0,il=poly.length;i<il;i++){
+		for(var j=0,jl=poly[i].length;j<jl;j++){
+
+			x = poly[i][j].X;
+			y = poly[i][j].Y;	
+
+			if(j==0){				
+			dot = Paper.circle(x,y,10);
+			dot.attr("fill","red");}
+			if(j==jl-1){
+			dot = Paper.circle(x,y,10);
+			dot.attr("fill","blue");}
+		}
+	
+	}
+}
+
+function deserialize_clipper_poly(polystr) {
+		window.lsk++;
+		var poly = JSON.parse(polystr);
+		var i, j, pp, n = [[]], m, pm;
+		var np = new ClipperLib.Polygons();
+		for (i = 0, m = poly.length; i < m; i++) {
+		  np[i] = new ClipperLib.Polygon();
+		  for (j = 0, pm = poly[i].length; j < pm; j++) {
+		    pp = new ClipperLib.IntPoint();
+		    if (!isNaN(Number(poly[i][j].X)) && !isNaN(Number(poly[i][j].Y))) {
+		      pp.X = Math.round(Number(poly[i][j].X));
+		      pp.Y = Math.round(Number(poly[i][j].Y));              
+		      np[i].push(pp);
+		    }
+		    else return n;
+		  }
+		}
+	return np;
+}
+var scaled_paths = [];
+var scale = 100,sub_poly_links_update=1;
+function polys2path (poly, scale) {
+  var path = "", i, j;
+  if (!scale) scale = 1;
+  for(i = 0; i < poly.length; i++) {
+    for(j = 0; j < poly[i].length; j++) {
+      if (!j) path += "M";
+      else path += "L";
+      path += (poly[i][j].X / scale) + ", " + (poly[i][j].Y / scale);
+    }
+    path += "Z";
+  }
+  return path;
+}
+
+function svgpath_to_clipper_polygons(d) {
+	var arr;
+	d = d.trim();
+	arr = Raphael.parsePathString(d); // str to array
+	arr = Raphael._pathToAbsolute(arr); // mahvstcsqz -> uppercase
+	var str = arr.flatten().join(" ");
+	var paths = str.replace(/M/g, '|M').split("|");
+	var k, polygons_arr = [],
+	  polygon_arr = [];
+	for (k = 0; k < paths.length; k++) {
+	  if (paths[k].trim() === "") continue;
+	  arr = Raphael.parsePathString(paths[k].trim());
+	  polygon_arr = [];
+	  var i = 0,
+	    j, m = arr.length,
+	    letter = "",
+	    x = 0,
+	    y = 0,
+	    pt = {},
+	    subpath_start = {};
+	  subpath_start.x = "";
+	  subpath_start.y = "";
+	  for (; i < m; i++) {
+	    letter = arr[i][0].toUpperCase();
+	    if (letter != "M" && letter != "L" && letter != "Z") continue;
+	    if (letter != "Z") {
+	      for (j = 1; j < arr[i].length; j = j + 2) {
+	        if (letter == "V") y = arr[i][j];
+	        else if (letter == "H") x = arr[i][j];
+	        else {
+	          x = arr[i][j];
+	          y = arr[i][j + 1];
+	        }
+	        pt = {};
+	        pt.X = null;
+	        pt.Y = null;
+	        if (typeof (x) != "undefined" && !isNaN(Number(x))) pt.X = Number(x);
+	        if (typeof (y) != "undefined" && !isNaN(Number(y))) pt.Y = Number(y);
+	        if (pt.X !== null && pt.Y !== null) {
+	          polygon_arr.push(pt);
+	        }
+	        else {
+	          return false;
+	        }
+	      }
+	    }
+	    if ((letter != "Z" && subpath_start.x === "") || letter == "M") {
+	      subpath_start.x = x;
+	      subpath_start.y = y;
+	    }
+	    if (letter == "Z") {
+	      x = subpath_start.x;
+	      y = subpath_start.y;
+	    }
+	  }
+	  polygons_arr.push(polygon_arr);
+	}
+	return polygons_arr;
+	}
+	Array.prototype.flatten || (Array.prototype.flatten = function () {
+	return this.reduce(function (a, b) {
+	  return a.concat('function' === typeof b.flatten ? b.flatten() : b);
+	}, []);
+});
+
+function scaleup(poly, scale) {
+  var i, j;
+  if (!scale) scale = 1;
+  for(i = 0; i < poly.length; i++) {
+    for(j = 0; j < poly[i].length; j++) {
+      poly[i][j].X *= scale;
+      poly[i][j].Y *= scale;
+    }
+  }
+  return poly;
+}
+
+function normalize_clipper_poly(polystr, quiet) {
+	if (typeof (polystr) != "string") return false;
+	polystr = polystr.trim();
+	var np, txt;
+	if (polystr.substr(0, 1).toUpperCase() === "M") {
+	  np = svgpath_to_clipper_polygons(polystr);
+	  if (np === false) {
+	    txt = "Unable to parse SVG path string.\n";
+	    txt += "Click OK to continue.\n";
+	    if (!quiet) alert(txt);
+	    return false;
+	  }
+	  else return JSON.stringify(np);
+	}
+	polystr = polystr.replace(/[\s,]+/g, ",");
+	if (polystr.substr(0, 1) !== "[") polystr = "[" + polystr;
+	if (polystr.substr(-1, 1) !== "]") polystr = polystr + "]";
+	try {
+	  var poly = JSON.parse(polystr);
+	}
+	catch (err) {
+	  txt = "Unable to parse polygon string.\n";
+	  txt += "Error: " + err.message + "\n";
+	  txt += "Click OK to continue.\n";
+	  if (!quiet) alert(txt);
+	  return false;
+	}
+	// if only points without "X" and "Y"
+	var temp_n = [], i;
+	if (isArray(poly) && poly.length && typeof (poly[0]) == "number") {
+	  var len = poly.length;
+	  for (i = 0; i < len; i = i + 2) {
+	    temp_n.push({
+	      X: poly[i],
+	      Y: poly[i + 1]
+	    });
+	  }
+	  poly = temp_n;
+	}
+	// if an array of array of points without "X" and "Y"
+	var temp_n2 = [], i, j, len, len2;
+	if (isArray(poly) && poly.length && isArray(poly[0]) && typeof(poly[0][0]) != "undefined" &&
+	typeof(poly[0][0].X) == "undefined" &&
+	typeof(poly[0][0].x) == "undefined") {
+	  len2 = poly.length;
+	  for (j = 0; j < len2; j++) {
+	    temp_n = [];
+	    len = poly[j].length;
+	    for (i = 0; i < len; i = i + 2) {
+	      temp_n.push({
+	        X: poly[j][i],
+	        Y: poly[j][i + 1]
+	      });
+	    }
+	    temp_n2.push(temp_n);
+	  }
+	  poly = temp_n2;
+	}
+
+	// if not array of arrays, convert to array of arrays
+	if (isArray(poly) && poly.length > 0 && !isArray(poly[0])) poly = [poly];
+	var pp, n = [[]],
+	  m, pm, x, y;
+	np = [[]];
+	for (i = 0, m = poly.length; i < m; i++) {
+	  np[i] = [];
+	  for (j = 0, pm = poly[i].length; j < pm; j++) {
+	    pp = {};
+	    y = null;
+	    x = null;
+	    if (typeof (poly[i][j].X) != "undefined" && !isNaN(Number(poly[i][j].X))) x = Number(poly[i][j].X);
+	    else if (typeof (poly[i][j].x) != "undefined" && !isNaN(Number(poly[i][j].x))) x = Number(poly[i][j].x);
+	    if (typeof (poly[i][j].Y) != "undefined" && !isNaN(Number(poly[i][j].Y))) y = Number(poly[i][j].Y);
+	    else if (typeof (poly[i][j].y) != "undefined" && !isNaN(Number(poly[i][j].y))) y = Number(poly[i][j].y);
+	    if (y !== null && x !== null) {
+	      pp.X = x;
+	      pp.Y = y;
+	      np[i].push(pp);
+	    }
+	    else {
+	      txt = "Unable to parse polygon string.\n";
+	      txt += "Error: Coordinates are not in a right form.\n";
+	      txt += "Click OK to continue.\n";
+	      if (!quiet) alert(txt);
+	      return false;
+	    };
+	  }
+	}
+	return JSON.stringify(np);
+}
+
+function pathToPoly(path){
+	var len = path.getTotalLength();
+    var p=path.getPointAtLength(0);
+    var seg = path.getPathSegAtLength(0);
+    var stp=p.x+","+p.y;
+    var myArray = [];
+    myArray[0] = {X :p.x,Y:p.y};
+    for(var i=1; i<len; i++){
+
+        p=path.getPointAtLength(i);
+
+        if (path.getPathSegAtLength(i)>seg) {
+
+        stp=stp+" "+p.x+","+p.y;
+        myArray[i] = {X :p.x,Y:p.y};
+        seg = path.getPathSegAtLength(i);
+
+        }
+
+    }
+    console.log(myArray);
+}
+
+function pathToPolygon(path,samples){
+  if (!samples) samples = 0;
+  var doc = path.ownerDocument;
+  var poly = doc.createElementNS('http://www.w3.org/2000/svg','polygon');
+ 
+  // Put all path segments in a queue
+  for (var segs=[],s=path.pathSegList,i=s.numberOfItems-1;i>=0;--i) segs[i] = s.getItem(i);
+  var segments = segs.concat();
+ 
+  var seg,lastSeg,points=[],x,y;
+  var addSegmentPoint = function(s){
+    if (s.pathSegType == SVGPathSeg.PATHSEG_CLOSEPATH){
+      
+    }else{
+      if (s.pathSegType%2==1 && s.pathSegType>1){
+        // All odd-numbered path types are relative, except PATHSEG_CLOSEPATH (1)
+        x+=s.x; y+=s.y;
+      }else{
+        x=s.x; y=s.y;
+      }         
+      var lastPoint = points[points.length-1];
+      if (!lastPoint || x!=lastPoint[0] || y!=lastPoint[1]) points.push([{X:pt.x,Y:pt.y}]);
+    }
+  };
+  for (var d=0,len=path.getTotalLength(),step=len/samples;d<=len;d+=step){
+    var seg = segments[path.getPathSegAtLength(d)];
+    var pt  = path.getPointAtLength(d);
+    if (seg != lastSeg){
+      lastSeg = seg;
+      while (segs.length && segs[0]!=seg) addSegmentPoint( segs.shift() );
+    }
+    var lastPoint = points[points.length-1];
+    //if (!lastPoint || pt.x!=lastPoint[0] || pt.y!=lastPoint[1]) points.push(pt);
+  }
+  for (var i=0,len=segs.length;i<len;++i) addSegmentPoint(segs[i]);
+  //for (var i=0,len=points.length;i<len;++i) points[i] = points[i].join(',');
+  	console.log(points);
+  	printDots(points);
+  
+}
+
+//Bezier functions:
+	B1 = function(t) { return (t*t*t); }
+	B2 = function(t) { return (3*t*t*(1-t)); }
+	B3 = function(t) { return (3*t*(1-t)*(1-t)); }
+	B4 = function(t) { return ((1-t)*(1-t)*(1-t)); }
+	
+//coordinate constructor
+coord = function (x,y) { if(!x) var x=0; if(!y) var y=0; return {X: x, Y: y}; }
+
+//Finds the coordinates of a point at a certain stage through a bezier curve
+function getBezier(percent,startPos,endPos,control1,control2) {
+	//if there aren't any extra control points plot a straight line, if there is only 1
+	//make 2nd point same as 1st
+
+	if(!control2 && !control1) var control2 = new coord(startPos.X + 3*(endPos.X-startPos.X)/4, startPos.Y + 3*(endPos.Y-startPos.Y)/4);
+	if(!control2) var control2 = control1;
+	if(!control1) var control1 = new coord(startPos.X + (endPos.X-startPos.X)/4, startPos.Y + (endPos.Y-startPos.Y)/4);
+			
+	var pos = new coord();
+	pos.X = startPos.X * B1(percent) + control1.X * B2(percent) + control2.X * B3(percent) + endPos.X * B4(percent);
+	pos.Y = startPos.Y * B1(percent) + control1.Y * B2(percent) + control2.Y * B3(percent) + endPos.Y * B4(percent);
+
+	return pos;
+}
+

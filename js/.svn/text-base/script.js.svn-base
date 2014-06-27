@@ -1,0 +1,452 @@
+var startPath = {};
+var startCircle,startDummyCircle;
+var xmlns = "http://www.w3.org/2000/svg";
+var pathValue = new Array();
+var pathValueI = 0;
+var path = null;
+var d = '';
+var text = null;
+var textId=0;
+var paper;
+var fileContent;
+var GlobalElementTesting = null;
+var viewBox = null;	
+var rect2 = null;
+// rect2 = document.createElementNS (xmlns, "rect");
+// $(rect2).attr({'x':'0','y':'0','height':'600','width':'800','style':'fill:#6699FF;opacity:0.5'});
+// $('svg').append(rect2);
+// $(rect2).click(createPath);
+//rect2 = document.createElementNS (xmlns, "rect");
+//$(rect2).attr({'x':'0','y':'0','height':'600','width':'800','style':'fill:#6699FF;opacity:0.5;display:none;'});		
+//$(rect2).unbind('touch');
+
+function createPath(event){
+	//console.log(event);
+	////consolele.log(event);
+	pathValue[pathValueI] = {};
+	//var poit = cursorPoint(event);
+	var poit = {'x' : event.clientX, 'y' : event.clientY};
+	pathValue[pathValueI].x = poit.x;
+	pathValue[pathValueI].y = poit.y;
+	pathValueI++;
+	if(!startCircle){		
+		startCircle = document.createElementNS (xmlns, "circle");
+		startDummyCircle = document.createElementNS (xmlns, "circle");
+		$(startCircle).attr({'cx':poit.x,'cy':poit.y,'r':'20','style':'opacity:0'});//,'style':'fill:"white"'
+		$(startDummyCircle).attr({'cx':poit.x,'cy':poit.y,'r':'10'});
+		$('svg').append(startDummyCircle);
+		$('svg').append(startCircle);
+		$(startCircle).hammer().on('tap',finishPath);		
+		return true;
+	}
+	if(!path){
+		path = document.createElementNS(xmlns,'path');	
+		$(path).attr({'stroke-width':'1','fill':'yellow','stroke':'blue','fill-opacity':0.5});
+		$('svg').append(path);	
+	}
+	d = 'M'+pathValue[0].x+' '+pathValue[0].y;
+	for(var i=1,l=pathValue.length ; i<l ; i++){
+		d+=' L'+pathValue[i].x +' '+pathValue[i].y;
+	}
+	d+=' Z';
+	$(path).attr('d',d);
+	$('svg').append(startCircle);
+	// d+=' Z';
+	// $(path).attr('d',d);
+	// $('svg').append(startCircle);
+}
+
+var myPath = [];
+var myText = [];
+function finishPath(){
+	//alert('finsih')
+	d = 'M'+pathValue[0].x+' '+pathValue[0].y;
+	for(var i=1,l=pathValue.length ; i<l ; i++){
+		d+=' L'+pathValue[i].x +' '+pathValue[i].y;
+	}
+	d += ' L'+pathValue[0].x+' '+pathValue[0].y;
+	d+=' Z';
+	myPath[myPath.length] = paper.path(d);
+	$(startCircle).remove();
+	$(startDummyCircle).remove();	
+	startCircle = null;
+	pathValue=null;
+	pathValue = new Array();
+	pathValueI = 0;
+	text = document.createElementNS (xmlns, "text");
+	value = "My Sweet Text";
+	var tspan = null;
+	myText[myText.length] = paper.print(100,100,value,paper.getFont("Arial"));
+	myText[myText.length-1].attr({"fill" : "black"});
+	//console.log(myText);
+	// for(var i=0,l=value.length ; i<l ; i++){
+	// 	//tspan = document.createElementNS(xmlns,'tspan');
+	// 	//$(tspan).attr({'dx' : '1px'});
+	// 	// tspan.textContent = value.charAt(i); 
+	// 	// $(text).append(tspan);
+	// }
+	//text.textContent = ; 
+	//$(text).val(value);
+
+	//$(text).attr({id:textId,'x':100,'y':100,'fill':'black'})
+	//$('svg').append(text);
+	//$(text).hammer().on('touch',elementFirstTouch).on('drag',elementDrag);	
+	$(rect2).unbind('tap');
+	$('#message').hide();
+	pathValue = [];
+	//console.log(d);
+	$(path).remove();
+	path = null;
+	// path = document.createElementNS(xmlns,'path');	
+	// 	$(path).attr({'stroke-width':'1','fill':'yellow','stroke':'blue','fill-opacity':0.5});
+	// 	$('svg').append(path);	
+	// path = document.
+	// d ="";
+	//$(rect2).hammer.destroy('tap');	
+}
+
+// $('#add').click(function(){
+// 	value = $('#text').val();
+// 	text = document.createElementNS (xmlns, "text");
+// 	text.textContent = value; 
+// 	//$(text).val(value);
+// 	$(text).attr({'x':100,'y':100,'fill':'black'});
+	
+// 	$('svg').append(text);	
+	
+	
+// });
+var svgJSON = [];
+function svgToJSON(currentSVG){
+	
+	$(currentSVG).children("*").each(function(index,ele){
+		elementToJSON(ele);
+	});
+}
+
+function elementToJSON(elem){
+	var tempJSON = {};
+	if(elem.tagName =="defs" || elem.tagName =="style")
+		return;
+
+	//consolele.log(elem.attributes.length);
+	svgToJSON(elem);
+}
+$(".select_svg").change(function(){
+	$("#loader").css("display","block");	
+	
+	 svgUrl=[];
+	 $('.exportBtn').show();
+ svgJson=[];
+ defs=[];
+ svgAttr=[];
+
+ SvgData={
+				"thickness":{
+								"zero":[],
+								"one":[]
+							}
+			};
+	//$("#svgContainer").children("svg").remove();;
+	// if(svg){
+
+	// }
+	$("#svgContainer").html('');
+	// if(paper){
+	// 	paper.clear();
+	// }
+
+	paper = Raphael("svgContainer", 500, 550);
+    var map = paper.set();
+    
+
+    fetch=this.value    
+    // load svgz map
+     // $.ajax({
+     //        type: "GET",
+     //        url: fetch,
+     //        dataType: "text",
+     //        success: function(svgXML) {            	
+     //        	//svg = svgXML;
+     //        	//consolele.log(svgXML);
+     //        	svg = $(svgXML).children("svg")[0];
+     //        	//svgToJSON(svg);
+     //        	//$("#svgContainer").html(svg);
+     //        	//var def = $(svgXML).find('defs')[0];
+            	             
+     //        	paper.importSVG(svg);
+     //        }
+     //    });
+	// delete SvgData.thickness.zero;
+	// delete SvgData.thickness.one;
+	// delete defs,svgJson,svgUrl;
+ 
+   // fetch=this.value
+   setTimeout(function (){
+   		 var filePath = "assets/"+fetch + ".svg";
+	    svgUrl.push(fetch);
+	    if (window.XMLHttpRequest)
+		  {// code for IE7+, Firefox, Chrome, Opera, Safari
+		  xmlhttp=new XMLHttpRequest();
+		  }
+		else
+		  {// code for IE6, IE5
+		  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+		  }    
+	    xmlhttp.open("GET",fetch,false);
+
+	    //xmlhttp.overrideMimeType('text/plain');
+	    xmlhttp.send(null);
+	    fileContent = xmlhttp.responseXML;
+	    fileText = xmlhttp.responseText;
+	    //fileContent = xmlhttp.responseText;
+	    ////consolele.log(fileContent)
+	    svgXML = fileContent;
+	    //svg = $(svgXML).children("svg")[0];
+		svg = svgXML;
+		//svg = $(svgXML).find("svg")[0];
+		////consolele.log(svg);
+		//svgToJSON(svg);
+		//$("#svgContainer").html(svg);
+		//var def = $(svgXML).find('defs')[0];
+		
+		fileText = fileText.substr(fileText.indexOf("<svg"),fileText.length);	
+		svg = StringToXML(fileText);	
+		paper.importSVG(svg,fileText);
+		
+		
+		
+		$("#loader").hide();
+		// if(svg.attributes){
+		// 	var attr = {};
+		// 	for (i = svg.attributes.length - 1; i >= 0; --i){
+
+		//           attr[svg.attributes[i].name] = svg.attributes[i].value;
+		          
+		// 	}
+		// 	//consolele.log(attr);
+		// 	// attr["height"] = 500;
+		// 	// attr["width"] = 600;
+		// 	$("svg").attr(attr);
+		// }
+		//consolele.log(paper);
+		 viewBox = $(svgXML).children("svg").attr("viewBox");
+
+		if(viewBox){
+			viewBox = viewBox.split(' ');	
+			paper.setViewBox(viewBox[0],viewBox[1],viewBox[2],viewBox[3],true);
+		}
+		// paper.renderfix();
+		//$("#svgContainer").children("svg").attr("viewBox",$(svgXML).children("svg").attr("viewBox"));
+		
+	   //  $("#svgContainer").html(fileContent);
+	   //  svg = $('#svgContainer').children('svg')[0];
+	   //  //pt = svg.createSVGPoint(); 
+	   //  $(svg).attr({'height': 575+'px','width': 550+'px'}); 
+
+
+
+	    //$(svg).append(rect2);
+		//$(rect2).hammer().on('tap',createPath);
+	    $('#tools').show();
+	    $('#editText').hide();
+	    var strokeWidth = 0;
+	    $("#svgContainer svg").find("*").each(function(index,ele){
+	    	strokeWidth = $(ele).attr("stroke");
+	    	if(strokeWidth != "none" && strokeWidth){
+	    		$("#svgContainer svg").prepend(ele);
+	    	}    	
+	    })
+
+  },100)
+   
+    
+ });
+function StringToXML(oString) {
+ //code for IE
+ if (window.ActiveXObject) { 
+ var oXML = new ActiveXObject("Microsoft.XMLDOM"); oXML.loadXML(oString);
+ return oXML;
+ }
+ // code for Chrome, Safari, Firefox, Opera, etc. 
+ else {
+ return (new DOMParser()).parseFromString(oString, "text/xml");
+ }
+}
+$('#addText').click(addText); 
+function addText(){	
+	textId++;
+	//$(rect2).show();
+	// if(rect2){
+	// 	rect2.remove();
+	// }	
+	// rect2 = paper.rect(0,0,paper.width,paper.height);
+	// rect2.attr({'fill': "#6699FF" , "opacity" : '0.5'});
+	// rect2.click(createPath);
+	//$(rect2.node).click(createPath);
+	$('#editText').show();
+	$('#message').show(); 
+}
+$('#button').click(function(){
+	 $('#editText').hide();
+})
+$('#input').keyup(myKeyboard);
+function myKeyboard(event){
+	value = $('#input').val();
+	// = "My Sweet Text";
+	var tspan = null;
+	$(text).children('tspan').remove();
+	for(var i=0,l=value.length ; i<l ; i++){
+		tspan = document.createElementNS(xmlns,'tspan');
+		//$(tspan).attr({'dx' : '1px'});
+		tspan.textContent = value.charAt(i); 
+		$(text).append(tspan);
+	}
+}
+(function(old) {
+  $.fn.attr = function() {
+    if(arguments.length === 0) {
+      if(this.length === 0) {
+        return null;
+      }
+
+      var obj = {};
+      $.each(this[0].attributes, function() {
+        if(this.specified) {
+          obj[this.name] = this.value;
+        }
+      });
+      return obj;
+    }
+
+    return old.apply(this, arguments);
+  };
+})($.fn.attr);
+
+var firstPath = null,secondPath = null;
+var comboPath = null,comboD = null;
+var testPath = new Array();
+var interD = null,differD; 
+function welding(){	
+	$("#weldLoader").show();
+	var checkBox = this;
+	setTimeout(function(){
+		testPath = [];
+		//console.log($(this));
+		if(Clipper)
+			delete Clipper; 
+		
+		Clipper = new ClipperLib.Clipper(); 
+		if(checkBox.checked){
+			$(".cutoutDiv").hide();
+			$(".cutoutDivWeld").html("");
+			$(".cutoutDivWeld").show();
+
+			paper = Raphael($(".cutoutDivWeld")[0],0,0,500,350);
+			$(".cutoutDivWeld svg").attr({"height":500,"width":350});	
+			$(".cutoutDivWeld svg").prepend(defs);
+			//viewBox = $(".cutoutDivWeld svg").attr("viewBox");
+				//console.log(viewBox);
+				// if(viewBox){
+				// 	viewBox = viewBox.split(' ');	
+				// 	//console.log(viewBox[2])
+				// }
+			paper.setViewBox(viewBox[0],viewBox[1],viewBox[2],viewBox[3]);
+			$(".cutoutDiv svg").children("*").each(function(index,elem){		
+				if(elem.nodeName == "path"){				
+					testPath[testPath.length] = $(elem).attr("d");	
+				}		
+			})
+			paper.clear();
+			Paper = paper;			
+			ResultPoly = new ClipperLib.Polygons();
+			if(testPath.length > 10){
+				
+				testPath[0] = myPathToPoly(testPath[0]);
+				//printDots(testPath[i]);		
+				testPath[0] = scaleup(testPath[0], 100);
+				Clipper.AddPolygons(testPath[0],0);
+
+				testPath[1] = myPathToPoly(testPath[1]);
+				//printDots(testPath[i]);		
+				testPath[1] = scaleup(testPath[1], 100);
+				Clipper.AddPolygons(testPath[1],1);
+				Clipper.Execute(1, ResultPoly, 1, 1);
+				for(var i=2,il=testPath.length;i<il;i++){
+					Clipper = new ClipperLib.Clipper();  
+					testPath[i] = myPathToPoly(testPath[i]);
+
+					//printDots(testPath[i]);		
+					testPath[i] = scaleup(testPath[i], 100);
+					Clipper.AddPolygons(testPath[i],Math.max(i,1));
+					Clipper.AddPolygons(ResultPoly,Math.max(i,1));
+					// testPath[i] = polys2path(testPath[i],100);				
+					// testPath[i] = paper.path(testPath[i]);
+					Clipper.Execute(1, ResultPoly, 1, 1);
+				}
+			}
+			else{
+				for(var i=0,il=testPath.length;i<il;i++){					
+					testPath[i] = myPathToPoly(testPath[i]);
+
+					//printDots(testPath[i]);		
+					testPath[i] = scaleup(testPath[i], 100);
+					Clipper.AddPolygons(testPath[i],Math.max(i,1));
+					
+					// testPath[i] = polys2path(testPath[i],100);				
+					// testPath[i] = paper.path(testPath[i]);
+					
+				}
+				Clipper.Execute(1, ResultPoly, 1, 1);
+			}
+		 	/////
+		 	// printDots(ResultPoly);
+		 	// console.log(ResultPoly);
+		 	//console.log(ResultPoly[0][0].X);
+		 	//dot = Paper.circle(ResultPoly[0][0].X/100,ResultPoly[0][0].Y/100,10);
+			// dot.attr("fill","green");
+			// dot = Paper.circle(ResultPoly[ResultPoly.length-1][ResultPoly[ResultPoly.length-1].length-1].X/100,ResultPoly[ResultPoly.length-1][ResultPoly[ResultPoly.length-1].length-1].Y/100,10);
+			// dot.attr("fill","red");
+		 	//console.log(ResultPoly[ResultPoly.length-1][ResultPoly[ResultPoly.length-1].length-1]);
+		 	//////
+		 	ResultPoly = polys2path(ResultPoly,100);	 	
+		 	var Path = Paper.path(ResultPoly);
+		 	Path.attr({"stroke-width":"2"});			
+		}
+		else
+		{
+			$(".cutoutDiv").show();
+			//$(".cutoutDivWeld").html("");
+			$(".cutoutDivWeld").hide();	
+		}
+		$("#weldLoader").hide();
+	},500);
+}
+$("#blackout").click(resetWelding);
+$(".close").click(resetWelding);
+function resetWelding(){ 
+ $("#weldingCheck").removeAttr("checked");
+ $(".cutoutDiv").show();
+ //$(".cutoutDivWeld").html("");
+ $(".cutoutDivWeld").hide(); 
+ Paper.clear();
+}
+
+$("#weldingCheck").click(welding);
+
+$(document).ready(function() {
+    
+    // var paper = Raphael(0, 0, 360, 360);
+    // var myCircle = paper.circle(180, 180, 30).attr('stroke', '#FFF');
+    // myCircle.attr("fill", "#CCC");
+    // myCircle.hover(
+    //  function() {
+    //      this.g = this.glow({
+    //          color: "#FFF",
+    //          width: 100
+    //      });
+    //  },
+    //  function() {
+    //      this.g.remove();
+    //  });
+});

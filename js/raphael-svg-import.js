@@ -1,0 +1,360 @@
+/*
+* Raphael SVG Import Classic 0.1.3 - Extension to Raphael JS
+* https://github.com/crccheck/raphael-svg-import-classic
+*
+* Raphael SVG Import Classic Copyright (c) 2012 Chris Chang
+* Original Raphael SVG Import Copyright (c) 2009 Wout Fierens
+* Licensed under the MIT (http://www.opensource.org/licenses/mit-license.php) license.
+*
+*/
+
+/* global Raphael */
+var style;
+var All = null;
+Raphael.fn.importSVG = function (svgXML,myText) {
+
+  var myNewSet = this.set();
+  var groupSet = {};
+  var tempClass = {};
+  var parent = null;
+  var parrentAttr = {};
+
+
+  
+  tempClass = findClass(myText);
+  
+
+  var myClass = {} ;
+
+  myClass = tempClass;
+
+  var defaultTextAttr = {   
+    "text-anchor": "start"  // raphael defaults to "middle"
+  };
+ try {    
+    this.parseElement = function(elShape) {
+      
+      var myShape = null;
+      
+      if (elShape.nodeType == 3) {        
+        return;
+      }
+
+      var attr = {"stroke": "", "stroke-width": "","fill":""}, i;
+    
+      if (elShape.attributes){        
+        for (i = elShape.attributes.length - 1; i >= 0; --i){
+          attr[elShape.attributes[i].name] = elShape.attributes[i].value;          
+        }
+
+        var clas = $(elShape).attr("class"); 
+       
+
+        if(clas){
+          var currentIndex = clas.indexOf(" ");
+          if(currentIndex != -1){
+              clas = clas.split(' ');
+
+              
+              for(var i=0,il=clas.length;i<il;i++){
+                if(myClass[clas[i]]){
+                    for(var j=0;j<myClass[clas[i]].length;j++){                     
+                      $.each(myClass[clas[i]][j],function(key,value){
+                         attr[key] = myClass[clas[i]][j][key]; 
+                      }); 
+                    }            
+                }
+              }            
+          }
+          else{            
+            if(myClass[clas]){
+              for(var j=0;j<myClass[clas].length;j++){
+                $.each(myClass[clas][j],function(key,value){
+                   attr[key] = myClass[clas][j][key]; 
+                });            
+              }
+            }
+          }
+            
+        
+          
+        }
+       
+        
+      }
+      var shape, style;
+      var shapeName = elShape.nodeName;
+      
+      switch(shapeName) {
+        case "svg":
+        case "g":
+          // pass the id to the first child, parse the children
+          var groupId = elShape.getAttribute('id');
+          if (groupId && elShape.childNodes.length) {            
+            elShape.childNodes.item(1).setAttribute('id', groupId);
+          }
+
+          var thisGroup = this.set();
+          for (i = 0; i < elShape.childNodes.length; ++i) {
+            thisGroup.push(this.parseElement(elShape.childNodes.item(i)));
+          }
+
+          // handle transform attribute
+          if (attr.transform){
+            var match = /translate\(([^,]+),([^,]+)\)/.exec(attr.transform);
+            if(match){
+                if (match.length == 3){
+                  thisGroup.translate(match[1], match[2]);
+                }
+            }
+          }
+
+          // handle display=none
+          if (attr.display === "none") {
+            thisGroup.hide();
+          }
+          // hold onto thisGroup just in case
+          if (groupId && elShape.childNodes.length) {
+            groupSet[groupId] = thisGroup;
+          }
+          return;
+        case "rect":
+          if (attr.rx && attr.ry) {
+            attr.r = (+(attr.rx || 0) + (+(attr.ry || 0))) / 2;
+            delete attr.rx;
+            delete attr.ry;
+          } else {
+            attr.r = attr.rx || attr.ry || 0;
+            delete attr.rx;
+            delete attr.ry;
+          }
+          /* falls through */
+        case "circle":
+        case "ellipse":
+          shape = this[shapeName]();
+          
+        break;
+        case "path":
+          
+          shape = this.path(attr.d);
+          delete attr.d;
+          
+        break;
+        case "polygon":          
+          shape = this.polygon(attr);          
+        break;
+        case "polyline":
+          shape = this.polyline(attr);
+          
+        break;
+        case "line":
+          shape = this.line(attr);
+         
+        break;
+        case "image":
+          shape = this.image();          
+        break;
+       
+        case "text":
+          for (var key in defaultTextAttr){            
+            if (!attr[key] && defaultTextAttr.hasOwnProperty(key)) {               
+              attr[key] = defaultTextAttr[key];
+            }
+          }
+          shape = this.text(attr.x, attr.y, elShape.text || elShape.textContent);
+          
+        break;
+        default:        
+          var elSVG = elShape.getElementsByTagName("svg");         
+          if (elSVG.length){
+            elSVG[0].normalize();
+            this.parseElement(elSVG[0]);
+          }       
+
+          return;
+      }
+
+      // apply matrix transformation
+
+      var matrix = null;
+      
+      matrix = attr.transform;
+      if (matrix) {
+        matrix = matrix.substring(7, matrix.length-1).split(' ')
+                 .map(function(x){ return parseFloat(x); });
+        var m = shape.matrix;
+        m.add.apply(m, matrix);
+        // this seems like a very odd step:
+        shape.transform(m.toTransformString());
+        delete attr.transform;
+      }
+      
+
+         shape.attr(attr);
+         if(elShape.nodeName=="image"){            
+            shape.node.href.baseVal = attr["xlink:href"];
+                      
+         }  
+         else if(elShape.nodeName=="polygon")
+            var x;
+          
+         else{
+
+         }
+         
+      var nodeID = elShape.getAttribute("id");
+      if (nodeID) {
+        shape.node.id = nodeID;
+      }
+
+      myNewSet.push(shape);
+      parent = elShape;
+      parrentAttr = attr;
+      return shape;
+    };    
+
+    this.parseElement(svgXML);
+  } catch (error) {
+    throw "SVGParseError (" + error + ")";
+  }
+
+  var groupsExist = false, x;
+  for (x in groupSet){
+    groupsExist = true;
+    break;
+  }
+  if (groupsExist) {
+    myNewSet.groups = groupSet;
+  }
+  return myNewSet;
+};
+
+Raphael.fn.line = function(attr){
+  var pathString = ["M",
+                    attr.x1,
+                    attr.y1,
+                    "L",
+                    attr.x2,
+                    attr.y2,
+                    "Z"];
+  delete attr.x1;
+  delete attr.y1;
+  delete attr.x2;
+  delete attr.y2;
+  return this.path(pathString);
+};
+
+
+// extending raphael with a polygon function
+Raphael.fn.polygon = function(attr) {
+  var pointString = attr.points;
+  var poly = ['M'],
+      point = pointString.split(' ');
+
+  for(var i=0; i < point.length; i++) {
+     var c = point[i].split(',');
+     for(var j=0; j < c.length; j++) {
+        var d = parseFloat(c[j]);
+        if (!isNaN(d))
+          poly.push(d);
+     }
+     if (i === 0)
+      poly.push('L');
+  }
+  poly.push('Z');
+  delete attr.points;    
+  return this.path(poly);
+};
+
+
+Raphael.fn.polyline = function(attr) {
+  var pointString = attr.points;
+  var poly = ['M'],
+      point = pointString.split(' ');
+
+  for(var i=0; i < point.length; i++) {
+     var c = point[i].split(',');
+     for(var j=0; j < c.length; j++) {
+        var d = parseFloat(c[j]);
+        if (!isNaN(d))
+          poly.push(d);
+     }
+     if (i === 0)
+      poly.push('L');
+  }
+  delete attr.points;
+  return this.path(poly);
+};
+
+
+/**  
+ This function will return GreyScale hexcolor. Use other function repeat with get_greyscale_color()   ;
+ */
+ 
+function get_greyscale_color() {
+    var color,hexsinglechat;
+    
+  hexsinglechat=Math.floor(1 + Math.random() * 15);//get any number from 0 to 16
+  color=hexsinglechat.toString(16);//convert single number to hexadecimal.
+  color=color.repeat(6,color).substring(1,7);//get first 6 character.
+  color='#'+color; 
+    return color;
+}
+
+/**  
+ * Repeat a string `n`-times (recursive)
+ * @param {Number} n - The times to repeat the string.
+ * @param {String} d - A delimiter between each string.
+ */
+ 
+String.prototype.repeat = function (n, d) {
+    return --n ? this + (d || "") + this.repeat(n, d) : "" + this;
+};
+
+function findClass(myText){
+ 
+  var tempClass = {};
+  var startPoint = myText.indexOf('<style type="text/css">') + 23;
+  var endPoint = myText.indexOf('</style>');
+  style = myText.substr(startPoint,endPoint - startPoint);
+  startPoint = style.indexOf("<![CDATA[") + 9;
+  endPoint = style.indexOf("]]>");
+  style = style.substr(startPoint,endPoint - startPoint);
+ 
+  style = style.replace(/\n|\r|\t/gi, '');
+  style = style.split('}');  
+  //console.log(style);
+  for(var i=0,l=style.length;i<l;i++){
+    var myCss = style[i].split('{');
+
+    myCss[0] = myCss[0].replace('.','');
+    var curCss = '';
+    for(var j=0,jl = myCss[0].length; j<jl;j++){
+      if(myCss[0].charAt(j) != " "){
+        curCss += myCss[0].charAt(j)        
+      }
+    } 
+    if(!tempClass[curCss])
+    tempClass[curCss] = new Array();  
+    if(myCss[1]){
+        myCss[1] = myCss[1].split(';');
+     
+
+        for(var k=0,kl=myCss[1].length;k<kl;k++){
+           
+            if(myCss[1][k]){
+                myCss[1][k] = myCss[1][k].split(":");
+              
+                var name = myCss[1][k][0];
+                var value = myCss[1][k][1];
+              
+                var tempJSON = {};
+                tempJSON[name] = value;
+               
+                tempClass[curCss].push(tempJSON);
+            }
+        }
+    }    
+  }
+  return tempClass;
+}
